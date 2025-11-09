@@ -1,18 +1,27 @@
-# Instant Visualization SaaS (Stage 1)
+# Nawwa AI - Instant Visual Creation Platform
 
-End-to-end vertical slice: sign up/login, send a command (e.g., "draw a red circle"), render on canvas, and save workspace.
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/deploy?template=https://github.com/BADER19/nawwa-ai)
 
-Quick start
-- Copy `infra/.env` and set values.
-- Run: `docker compose -f infra/docker-compose.yml up --build`
-- Open `http://localhost:3000` → use `/auth` then `/app`.
+AI-powered instant visualization SaaS platform that converts natural language commands into real-time visual presentations.
 
-Services
-- backend: FastAPI (`/auth`, `/visualize`, `/workspace`)
-- frontend: Next.js (Fabric.js canvas)
-- db: Postgres; redis: Redis
+## Quick Deploy
 
-Notes
-- `/visualize` and `/workspace/*` require JWT.
-- OpenAI GPT-4o powers interpretation; falls back to a naive parser if unavailable.
+Click the button above to deploy to Railway with one click!
 
+## Features
+
+- Natural language to visual conversion
+- Real-time canvas rendering
+- User authentication & workspaces
+- Multi-tier AI interpretation
+- Image generation support
+
+## Tech Stack
+
+- Backend: FastAPI + PostgreSQL + Redis
+- Frontend: Next.js + TypeScript + Fabric.js
+- AI: OpenAI GPT-4 + DALL-E
+
+## Local Development
+
+See CLAUDE.md for detailed setup instructions.
