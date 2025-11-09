@@ -82,7 +82,7 @@ export default function VisualizationRouter({ spec }: { spec: VisualSpec }) {
       if (nodes && nodes.length > 0) {
         console.log('[VisualizationRouter] Using D3Renderer with', nodes.length, 'nodes');
         // Pass the spec as elements array with nodes/links embedded
-        return <D3Renderer elements={[{ nodes, links }]} layoutType="force" />;
+        return <D3Renderer elements={[{ type: 'graph', nodes, links }]} layoutType="force" />;
       }
 
       const hasShapes = elements?.some(e => ['circle', 'triangle', 'ellipse', 'polygon', 'path'].includes(e.type));
