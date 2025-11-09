@@ -88,7 +88,13 @@ export default function VisualizationRouter({ spec }: { spec: VisualSpec }) {
       const hasShapes = elements?.some(e => ['circle', 'triangle', 'ellipse', 'polygon', 'path'].includes(e.type));
 
       if (hasShapes) {
-        return <ShapeRenderer elements={elements || []} />;
+        // Ensure elements have required x,y coordinates with defaults
+        const shapeElements = (elements || []).map(e => ({
+          ...e,
+          x: e.x ?? 100,
+          y: e.y ?? 100
+        }));
+        return <ShapeRenderer elements={shapeElements as any} />;
       }
       return <ConceptualRenderer elements={elements || []} />;
 
