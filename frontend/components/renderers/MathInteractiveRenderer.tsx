@@ -407,14 +407,14 @@ export default function MathInteractiveRenderer({
               font: { size: 18, color: '#1e293b', family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }
             },
             xaxis: {
-              title: 'x',
+              title: { text: 'x' },
               gridcolor: '#e5e7eb',
               zerolinecolor: '#94a3b8',
               zerolinewidth: 2,
               range: xRange
             },
             yaxis: {
-              title: 'y',
+              title: { text: 'y' },
               gridcolor: '#e5e7eb',
               zerolinecolor: '#94a3b8',
               zerolinewidth: 2,

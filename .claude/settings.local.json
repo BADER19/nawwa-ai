@@ -29,7 +29,20 @@
       "Bash(netstat:*)",
       "Bash(powershell -Command:*)",
       "Bash(docker rm:*)",
-      "Bash(docker start:*)"
+      "Bash(docker start:*)",
+      "Bash(git config:*)",
+      "Bash(git commit:*)",
+      "Bash(where:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(echo:*)",
+      "Bash(railway.json)",
+      "Bash(README.md)",
+      "Bash(git add:*)",
+      "Bash(.env.production)",
+      "Bash(vercel:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

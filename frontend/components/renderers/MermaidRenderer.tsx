@@ -7,7 +7,7 @@ interface MermaidRendererProps {
 
 // Minimal Elegance Theme - Black & White with Accent Color
 const MINIMAL_ELEGANCE_THEME = {
-  theme: 'base',
+  theme: 'base' as const,
   themeVariables: {
     // Primary colors - Black, White, and sophisticated accent
     primaryColor: '#ffffff',

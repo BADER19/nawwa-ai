@@ -49,9 +49,11 @@ export default function ConceptualRenderer({ elements }: { elements: Element[] |
 
     // Use proxy endpoint for external URLs to avoid CORS issues
     // Data URLs (base64) can be used directly
-    const imageSrc = imageElement.src.startsWith('data:')
+    const imageSrc = imageElement.src?.startsWith('data:')
       ? imageElement.src
-      : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:18001'}/image/proxy?url=${encodeURIComponent(imageElement.src)}`;
+      : imageElement.src
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:18001'}/image/proxy?url=${encodeURIComponent(imageElement.src)}`
+        : '';
 
     return (
       <div style={{
