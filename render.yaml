@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: nawwa-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PAYPAL_MODE
+        value: sandbox
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_PRO_MONTHLY_PLAN_ID
+        value: P-38617509FA570261GNEINY2Y
+      - key: PAYPAL_PRO_YEARLY_PLAN_ID
+        value: P-40539137PY140822CNEIN4VY
+      - key: PAYPAL_TEAM_MONTHLY_PLAN_ID
+        sync: false
+      - key: PAYPAL_TEAM_YEARLY_PLAN_ID
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://nawwa.vercel.app,http://localhost:3000

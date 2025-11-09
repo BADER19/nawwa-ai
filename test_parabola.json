@@ -1,0 +1,32 @@
+{
+  "elements": [
+    {
+      "type": "axes",
+      "xRange": [-1, 5],
+      "yRange": [-3, 7],
+      "xLabel": "x",
+      "yLabel": "y"
+    },
+    {
+      "type": "function",
+      "expression": "x**2 - 4*x + 3",
+      "domain": [-1, 5],
+      "color": "#2563eb",
+      "label": "y = x² - 4x + 3"
+    },
+    {
+      "type": "point",
+      "x": 2,
+      "y": -1,
+      "label": "local minimum",
+      "color": "#ef4444"
+    },
+    {
+      "type": "annotation",
+      "x": 2,
+      "y": -1,
+      "text": "Minimum at (2, -1)",
+      "anchor": "top"
+    }
+  ]
+}

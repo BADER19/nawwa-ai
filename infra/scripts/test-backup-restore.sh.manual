@@ -1,0 +1,102 @@
+#!/bin/bash
+# Test backup and restore functionality
+# This creates a backup, restores it to a test database, and verifies integrity
+
+set -e
+
+DB_CONTAINER="${DB_CONTAINER:-infra-db-1}"
+DB_USER="${DB_USER:-user}"
+SOURCE_DB="instantviz"
+TEST_DB="instantviz_restore_test"
+BACKUP_DIR="/backups"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+TEST_BACKUP="${BACKUP_DIR}/test_backup_${TIMESTAMP}.sql.gz"
+
+echo "========================================"
+echo "BACKUP/RESTORE TEST"
+echo "========================================"
+echo "Source DB: $SOURCE_DB"
+echo "Test DB: $TEST_DB"
+echo ""
+
+# Step 1: Create test backup
+echo "[1/5] Creating test backup..."
+docker exec -t "$DB_CONTAINER" pg_dump -U "$DB_USER" -d "$SOURCE_DB" \
+    --format=custom --no-owner --no-acl | gzip > "$TEST_BACKUP"
+
+if [ ! -f "$TEST_BACKUP" ]; then
+    echo "✗ Backup creation failed"
+    exit 1
+fi
+
+BACKUP_SIZE=$(du -h "$TEST_BACKUP" | cut -f1)
+echo "✓ Backup created: $TEST_BACKUP ($BACKUP_SIZE)"
+echo ""
+
+# Step 2: Get row counts from source
+echo "[2/5] Counting rows in source database..."
+USERS_COUNT=$(docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$SOURCE_DB" -t -c "SELECT COUNT(*) FROM users;" | tr -d ' \r\n')
+WORKSPACES_COUNT=$(docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$SOURCE_DB" -t -c "SELECT COUNT(*) FROM workspaces;" | tr -d ' \r\n')
+PROJECTS_COUNT=$(docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$SOURCE_DB" -t -c "SELECT COUNT(*) FROM projects;" | tr -d ' \r\n')
+
+echo "  Users: $USERS_COUNT"
+echo "  Workspaces: $WORKSPACES_COUNT"
+echo "  Projects: $PROJECTS_COUNT"
+echo ""
+
+# Step 3: Create test database
+echo "[3/5] Creating test database..."
+docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $TEST_DB;" > /dev/null 2>&1
+docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d postgres -c "CREATE DATABASE $TEST_DB OWNER $DB_USER;" > /dev/null 2>&1
+echo "✓ Test database created"
+echo ""
+
+# Step 4: Restore to test database
+echo "[4/5] Restoring to test database..."
+gunzip -c "$TEST_BACKUP" | docker exec -i "$DB_CONTAINER" pg_restore -U "$DB_USER" -d "$TEST_DB" \
+    --no-owner --no-acl --clean --if-exists 2>&1 | grep -v "WARNING: errors ignored" | grep -v "ERROR.*does not exist" || true
+echo "✓ Restore completed"
+echo ""
+
+# Step 5: Verify data integrity
+echo "[5/5] Verifying data integrity..."
+RESTORED_USERS=$(docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$TEST_DB" -t -c "SELECT COUNT(*) FROM users;" | tr -d ' \r\n')
+RESTORED_WORKSPACES=$(docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$TEST_DB" -t -c "SELECT COUNT(*) FROM workspaces;" | tr -d ' \r\n')
+RESTORED_PROJECTS=$(docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$TEST_DB" -t -c "SELECT COUNT(*) FROM projects;" | tr -d ' \r\n')
+
+echo "  Restored Users: $RESTORED_USERS"
+echo "  Restored Workspaces: $RESTORED_WORKSPACES"
+echo "  Restored Projects: $RESTORED_PROJECTS"
+echo ""
+
+# Compare counts
+if [ "$USERS_COUNT" = "$RESTORED_USERS" ] && \
+   [ "$WORKSPACES_COUNT" = "$RESTORED_WORKSPACES" ] && \
+   [ "$PROJECTS_COUNT" = "$RESTORED_PROJECTS" ]; then
+    echo "========================================"
+    echo "✓ BACKUP/RESTORE TEST PASSED"
+    echo "========================================"
+    echo "All data restored correctly!"
+    echo ""
+
+    # Cleanup
+    echo "Cleaning up test database..."
+    docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $TEST_DB;" > /dev/null 2>&1
+    rm -f "$TEST_BACKUP"
+    echo "✓ Cleanup complete"
+    exit 0
+else
+    echo "========================================"
+    echo "✗ BACKUP/RESTORE TEST FAILED"
+    echo "========================================"
+    echo "Data mismatch detected!"
+    echo ""
+    echo "Expected → Got:"
+    echo "Users: $USERS_COUNT → $RESTORED_USERS"
+    echo "Workspaces: $WORKSPACES_COUNT → $RESTORED_WORKSPACES"
+    echo "Projects: $PROJECTS_COUNT → $RESTORED_PROJECTS"
+    echo ""
+    echo "Test database preserved: $TEST_DB"
+    echo "Test backup preserved: $TEST_BACKUP"
+    exit 1
+fi

@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker restart:*)",
+      "Bash(docker ps:*)",
+      "Bash(npm install:*)",
+      "Bash(docker logs infra-backend-1 --tail 30)",
+      "Bash(docker logs:*)",
+      "Bash(docker cp:*)",
+      "Read(//d/landingPage/**)",
+      "Bash(curl:*)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(timeout 15 bash:*)",
+      "Bash(chmod:*)",
+      "Bash(/d/aiVisualizer/infra/scripts/test-backup-restore.sh:*)",
+      "Bash(gzip:*)",
+      "Bash(python scripts/setup_stripe_products.py:*)",
+      "Bash(timeout 20 bash:*)",
+      "Bash(python:*)",
+      "Bash(timeout:*)",
+      "Bash(docker rmi:*)",
+      "Bash(where ollama)",
+      "Bash(ollama pull:*)",
+      "Bash(ollama list:*)",
+      "Bash(ollama rm:*)",
+      "Bash(find:*)",
+      "Bash(netstat:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker start:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

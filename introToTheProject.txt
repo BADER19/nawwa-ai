@@ -1,0 +1,150 @@
+🧭 Introduction for the Coding Agent
+
+You’re not building a traditional presentation tool.
+You’re building an instant, AI-powered visual presentation platform — a system that replaces PowerPoint, slides, and static prep altogether.
+
+The core principle is simple but powerful:
+
+The user speaks or types an idea, and the system instantly creates visuals — charts, diagrams, shapes, math graphs, or annotated scenes — right in front of them.
+
+No prebuilt slides.
+No templates.
+No wasted prep time.
+
+The system provides a live, intelligent workspace — a blank visual canvas waiting for the user’s ideas.
+They can:
+
+Speak to the system in real time.
+
+See the visuals appear instantly on-screen.
+
+Save everything into a workspace they can revisit, edit, or present again later.
+
+In practice, this means:
+
+A teacher can say “show a parabola and its tangent at x=2” and the board draws it live.
+
+A founder can say “draw our user funnel” and a clean flowchart appears.
+
+A scientist can say “plot temperature vs. time for dataset A” and a chart animates instantly.
+
+It’s not PowerPoint.
+It’s thinking and speaking turned visual — instantly.
+
+🧠 What You’re Building
+
+You’re creating a real-time, multimodal visualization SaaS, built around:
+
+Natural language understanding — powered by OpenAI GPT-4o.
+
+Dynamic visual rendering — via a canvas engine (Fabric.js).
+
+Persistent workspaces — backed by a Postgres database for saving sessions.
+
+Modular architecture — backend API (FastAPI), frontend app (Next.js), cache (Redis).
+
+Your job is to make this entire pipeline work end-to-end, cleanly, inside Docker — so a user can type or speak and see visuals appear instantly.
+
+⚙️ Stage 1 Objective
+
+Build the core foundation of this system — the first working vertical slice.
+It must:
+
+Take text input (voice optional for now).
+
+Use OpenAI GPT-4o to interpret the command.
+
+Generate a structured JSON describing visuals (e.g., shapes, colors, positions).
+
+Render those visuals on a canvas (Fabric.js) in real time.
+
+Save and load workspaces from PostgreSQL.
+
+Keep everything modular, documented, and production-grade.
+Frontend design is plain — we will hire a UI engineer later.
+Your task is functionality, not styling.
+
+🧩 Tech Stack Overview
+Layer	Tech
+Frontend	Next.js (React + TS), Fabric.js, TailwindCSS
+Backend	FastAPI (Python), OpenAI API, SQLAlchemy
+Database	PostgreSQL
+Cache	Redis
+Infra	Docker + docker-compose
+Auth	JWT (basic)
+Speech (later)	OpenAI Whisper API
+🧱 Stage 1 Deliverables
+
+Backend API
+
+/auth → signup/login.
+
+/visualize → accepts natural language input, returns JSON visual spec.
+
+/workspace → save/load workspace data.
+
+Integration with OpenAI API.
+
+Uses SQLAlchemy + Postgres for persistence.
+
+Redis for caching (optional but configured).
+
+Frontend
+
+Minimal Next.js app with:
+
+Landing page /
+
+Login /auth
+
+Workspace /app → contains chat input + canvas.
+
+Input box sends command to /visualize.
+
+Fabric.js renders visuals described by backend JSON.
+
+“Save” button stores workspace via /workspace/save.
+
+Infrastructure
+
+Docker Compose setup (backend, frontend, Postgres, Redis).
+
+Environment variables stored in .env.
+
+One command (docker-compose up) brings everything online.
+
+Validation
+
+A user can:
+
+Sign up
+
+Type “draw a blue circle”
+
+See the circle appear on the canvas
+
+Save workspace
+
+Reload workspace and see the same visual
+
+When that loop works, Stage 1 is complete.
+
+⚡️ Constraints
+
+No fancy design or animations.
+
+No billing, OAuth, or collaboration yet.
+
+Focus purely on the flow: input → AI → visual → save.
+
+Once this foundation is stable, we’ll build Stage 2: Smart Understanding & Rendering (context awareness, more visual types, workspace intelligence).
+
+
+
+
+
+
+
+
+
+"http://localhost:28001/docs#/admin/update_user_admin_users__user_id__put"

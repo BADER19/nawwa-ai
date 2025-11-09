@@ -1,0 +1,114 @@
+#!/bin/bash
+# Database monitoring script - shows current health and statistics
+
+DB_CONTAINER="${DB_CONTAINER:-infra-db-1}"
+DB_USER="${DB_USER:-user}"
+DB_NAME="${DB_NAME:-instantviz}"
+
+echo "========================================"
+echo "DATABASE HEALTH MONITOR"
+echo "========================================"
+echo "Time: $(date)"
+echo ""
+
+# Check if database is running
+echo "[1/7] Database Status"
+if docker exec "$DB_CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; then
+    echo "✓ Database is running and accepting connections"
+else
+    echo "✗ Database is not accessible!"
+    exit 1
+fi
+echo ""
+
+# Database size
+echo "[2/7] Database Size"
+docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "
+SELECT pg_size_pretty(pg_database_size('$DB_NAME')) AS size;"
+echo ""
+
+# Table sizes
+echo "[3/7] Table Sizes"
+docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "
+SELECT
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
+    pg_total_relation_size(schemaname||'.'||tablename) AS bytes
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY bytes DESC;"
+echo ""
+
+# Row counts
+echo "[4/7] Row Counts"
+docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "
+SELECT
+    'users' AS table_name, COUNT(*) AS rows FROM users
+UNION ALL
+SELECT 'workspaces', COUNT(*) FROM workspaces
+UNION ALL
+SELECT 'projects', COUNT(*) FROM projects
+UNION ALL
+SELECT 'project_visualizations', COUNT(*) FROM project_visualizations;"
+echo ""
+
+# Active connections
+echo "[5/7] Active Connections"
+docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "
+SELECT
+    COUNT(*) AS total_connections,
+    COUNT(*) FILTER (WHERE state = 'active') AS active,
+    COUNT(*) FILTER (WHERE state = 'idle') AS idle,
+    COUNT(*) FILTER (WHERE state = 'idle in transaction') AS idle_in_transaction
+FROM pg_stat_activity
+WHERE datname = '$DB_NAME';"
+echo ""
+
+# Recent activity
+echo "[6/7] Recent Activity (Last 10 minutes)"
+docker exec -t "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "
+SELECT
+    usename,
+    application_name,
+    state,
+    query_start,
+    state_change,
+    wait_event_type,
+    wait_event
+FROM pg_stat_activity
+WHERE datname = '$DB_NAME'
+    AND state_change > NOW() - INTERVAL '10 minutes'
+ORDER BY state_change DESC
+LIMIT 10;"
+echo ""
+
+# Backup status
+echo "[7/7] Backup Status"
+BACKUP_DIR="/backups"
+if [ -d "$BACKUP_DIR" ]; then
+    LATEST_BACKUP=$(find "$BACKUP_DIR" -name "instantviz_backup_*.sql.gz" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2)
+    if [ -n "$LATEST_BACKUP" ]; then
+        BACKUP_AGE=$(stat -c %Y "$LATEST_BACKUP" 2>/dev/null || stat -f %m "$LATEST_BACKUP" 2>/dev/null)
+        CURRENT_TIME=$(date +%s)
+        AGE_HOURS=$(( ($CURRENT_TIME - $BACKUP_AGE) / 3600 ))
+
+        echo "Latest backup: $(basename "$LATEST_BACKUP")"
+        echo "Backup age: ${AGE_HOURS} hours"
+        echo "Backup size: $(du -h "$LATEST_BACKUP" 2>/dev/null | cut -f1)"
+
+        if [ $AGE_HOURS -gt 48 ]; then
+            echo "⚠ WARNING: Backup is more than 48 hours old!"
+        else
+            echo "✓ Backup is recent"
+        fi
+    else
+        echo "✗ No backups found in $BACKUP_DIR"
+    fi
+else
+    echo "✗ Backup directory not found: $BACKUP_DIR"
+fi
+
+echo ""
+echo "========================================"
+echo "Monitor complete!"
+echo "========================================"

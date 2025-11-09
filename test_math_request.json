@@ -1,0 +1,18 @@
+{
+  "elements": [
+    {
+      "type": "axes",
+      "xRange": [-10, 10],
+      "yRange": [-10, 10],
+      "xLabel": "x",
+      "yLabel": "y"
+    },
+    {
+      "type": "function",
+      "expression": "x**2",
+      "domain": [-5, 5],
+      "color": "#2563eb",
+      "label": "y=x²"
+    }
+  ]
+}
