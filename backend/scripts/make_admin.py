@@ -1,27 +1,19 @@
 #!/usr/bin/env python
 """
-Script to make a user admin and upgrade to PRO tier on production.
-This script should be run on Railway to update the production database.
+Script to make a user admin and upgrade to PRO tier.
+Run this locally or on Railway to update user privileges.
 """
 
 import os
 import sys
-
-# For production on Railway, we need to use the DATABASE_URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    print("[ERROR] DATABASE_URL environment variable not set")
-    print("This script should be run on Railway or with production DATABASE_URL set")
-    sys.exit(1)
-
-# Parse the DATABASE_URL to handle both postgresql:// and postgresql+psycopg:// formats
-if DATABASE_URL.startswith("postgresql+psycopg://"):
-    # Convert to standard psycopg2 format
-    DATABASE_URL = DATABASE_URL.replace("postgresql+psycopg://", "postgresql://")
-
 import psycopg2
 from psycopg2 import sql
+
+# Get database URL from environment or use default
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://user:mRQVnJuF44C0dtO-XjVW7yZVvU2OTdQAZ7rk4KJrN4g@localhost:15432/nawwa"
+)
 
 def make_user_admin_and_pro(email=None, user_id=None):
     """Make a user admin and upgrade to PRO tier."""
@@ -104,11 +96,10 @@ if __name__ == "__main__":
         elif sys.argv[1].isdigit():
             make_user_admin_and_pro(user_id=int(sys.argv[1]))
         else:
-            print("Usage: python make_admin_prod.py [email or user_id]")
-            print("  Example: python make_admin_prod.py user@example.com")
-            print("  Example: python make_admin_prod.py 1")
+            print("Usage: python make_admin.py [email or user_id]")
+            print("  Example: python make_admin.py user@example.com")
+            print("  Example: python make_admin.py 1")
             sys.exit(1)
     else:
-        # No arguments - update Bader's account by email
-        print("No arguments provided, updating baderalserhan158@gmail.com")
-        make_user_admin_and_pro(email="baderalserhan158@gmail.com")
+        # No arguments - update user ID 1
+        make_user_admin_and_pro()
