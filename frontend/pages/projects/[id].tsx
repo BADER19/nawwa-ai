@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import api from '../../lib/api';
+import { api } from '../../lib/api';
 
 interface Project {
   id: number;
@@ -621,7 +621,7 @@ function ProjectModal({ onClose, onSuccess, project }: ProjectModalProps) {
   const removeTopic = (topic: string) => {
     setFormData({
       ...formData,
-      topics: formData.topics.filter((t) => t !== topic),
+      topics: formData.topics.filter((t: string) => t !== topic),
     });
   };
 
@@ -898,7 +898,7 @@ function ProjectModal({ onClose, onSuccess, project }: ProjectModalProps) {
               </button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {formData.topics.map((topic) => (
+              {formData.topics.map((topic: string) => (
                 <span
                   key={topic}
                   style={{

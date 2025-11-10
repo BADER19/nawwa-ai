@@ -96,7 +96,13 @@ export default function VisualizationRouter({ spec }: { spec: VisualSpec }) {
         }));
         return <ShapeRenderer elements={shapeElements as any} />;
       }
-      return <ConceptualRenderer elements={elements || []} />;
+      // Ensure all elements have required x,y coordinates
+      const conceptualElements = (elements || []).map(e => ({
+        ...e,
+        x: e.x ?? 100,
+        y: e.y ?? 100
+      }));
+      return <ConceptualRenderer elements={conceptualElements as any} />;
 
     case 'timeline':
       // TODO: Implement TimelineRenderer
@@ -153,6 +159,12 @@ export default function VisualizationRouter({ spec }: { spec: VisualSpec }) {
     default:
       // Default to conceptual renderer for unknown types
       console.warn('[VisualizationRouter] Unknown visualType:', visualType, '- defaulting to ConceptualRenderer');
-      return <ConceptualRenderer elements={elements} />;
+      // Ensure all elements have required x,y coordinates
+      const defaultElements = (elements || []).map(e => ({
+        ...e,
+        x: e.x ?? 100,
+        y: e.y ?? 100
+      }));
+      return <ConceptualRenderer elements={defaultElements as any} />;
   }
 }
