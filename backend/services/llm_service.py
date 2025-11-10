@@ -377,6 +377,62 @@ PROMPT_TEMPLATE = (
     "   - Systems: 'Circulatory system', 'Nervous system', 'Digestive system', 'Respiratory system', 'Muscular system'\n"
     "   - Specific: 'Eye anatomy', 'Ear anatomy', 'Tooth anatomy'\n\n"
 
+    "   GEOGRAPHY & LANDMARKS (for geography students):\n"
+    "   USE FOR: countries, cities, landmarks, natural features, maps, geographic locations\n"
+    "   KEYWORDS: 'map', 'country', 'city', 'landmark', 'mountain', 'river', 'ocean', 'continent', 'tower', 'building'\n"
+    "   CRITICAL RULES:\n"
+    "   - Use 'geography_term' field to fetch geography images from Wikipedia\n"
+    "   - DO NOT include 'src' field - backend will fetch the image automatically\n"
+    "   - Support countries, cities, landmarks, natural features\n"
+    "   - Format: Set 'geography_term' to the location/landmark name for Wikipedia lookup\n"
+    "   EXAMPLE 1: 'show me map of Egypt'\n"
+    "   {{\n"
+    "     \"visualType\": \"conceptual\",\n"
+    "     \"elements\": [\n"
+    "       {{\n"
+    "         \"type\": \"image\",\n"
+    "         \"x\": 200,\n"
+    "         \"y\": 50,\n"
+    "         \"width\": 400,\n"
+    "         \"height\": 450,\n"
+    "         \"geography_term\": \"Egypt\"\n"
+    "       }}\n"
+    "     ]\n"
+    "   }}\n"
+    "   EXAMPLE 2: 'show me the Eiffel Tower'\n"
+    "   {{\n"
+    "     \"visualType\": \"conceptual\",\n"
+    "     \"elements\": [\n"
+    "       {{\n"
+    "         \"type\": \"image\",\n"
+    "         \"x\": 200,\n"
+    "         \"y\": 50,\n"
+    "         \"width\": 400,\n"
+    "         \"height\": 500,\n"
+    "         \"geography_term\": \"Eiffel Tower\"\n"
+    "       }}\n"
+    "     ]\n"
+    "   }}\n"
+    "   EXAMPLE 3: 'show me Mount Everest'\n"
+    "   {{\n"
+    "     \"visualType\": \"conceptual\",\n"
+    "     \"elements\": [\n"
+    "       {{\n"
+    "         \"type\": \"image\",\n"
+    "         \"x\": 200,\n"
+    "         \"y\": 50,\n"
+    "         \"width\": 400,\n"
+    "         \"height\": 450,\n"
+    "         \"geography_term\": \"Mount Everest\"\n"
+    "       }}\n"
+    "     ]\n"
+    "   }}\n"
+    "   SUPPORTED GEOGRAPHY TERMS:\n"
+    "   - Countries: 'Egypt', 'France', 'Japan', 'Brazil', 'Australia', 'China', 'India'\n"
+    "   - Landmarks: 'Eiffel Tower', 'Great Wall of China', 'Taj Mahal', 'Colosseum', 'Statue of Liberty'\n"
+    "   - Natural Features: 'Mount Everest', 'Amazon River', 'Grand Canyon', 'Sahara Desert', 'Great Barrier Reef'\n"
+    "   - Cities: 'Paris', 'Tokyo', 'New York', 'London', 'Dubai'\n\n"
+
     "9. EQUATION DISPLAY (for showing formulas without graphs):\n"
     "   USE FOR: showing mathematical equations, formulas, definitions when user doesn't ask to 'plot' or 'graph'\n"
     "   KEYWORDS: 'show equation', 'show formula', 'what is the equation', 'formula for', 'equation for'\n"
@@ -1066,6 +1122,17 @@ def normalize_spec(spec: Dict[str, Any]) -> Dict[str, Any]:
                 logging.getLogger("llm").info(f"Found Wikipedia anatomy image: {src}")
             else:
                 logging.getLogger("llm").warning(f"No Wikipedia anatomy image found for: {anatomy_term}")
+
+        # Handle geography images - fetch from Wikipedia if geography_term is provided
+        if t == "image" and not src and e.get("geography_term"):
+            geography_term = e.get("geography_term")
+            logging.getLogger("llm").info(f"Fetching Wikipedia geography image for: {geography_term}")
+            wikipedia_url = fetch_wikipedia_image_sync(geography_term)
+            if wikipedia_url:
+                src = wikipedia_url
+                logging.getLogger("llm").info(f"Found Wikipedia geography image: {src}")
+            else:
+                logging.getLogger("llm").warning(f"No Wikipedia geography image found for: {geography_term}")
 
         # Extract text-specific properties
         fontSize = e.get("fontSize")
