@@ -162,9 +162,9 @@ def create_app() -> FastAPI:
     app.include_router(chat_service.router, prefix="/chat", tags=["chat"])
     app.include_router(admin_service.router, prefix="/admin", tags=["admin"])
 
-    # Dashboard routes
-    from services import dashboard as dashboard_service
-    app.include_router(dashboard_service.router, prefix="/dashboard", tags=["dashboard"])
+    # Dashboard routes - temporarily disabled
+    # from services import dashboard as dashboard_service
+    # app.include_router(dashboard_service.router, prefix="/dashboard", tags=["dashboard"])
 
     return app
 
