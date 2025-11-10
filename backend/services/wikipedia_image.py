@@ -21,7 +21,11 @@ async def fetch_wikipedia_image(person_name: str) -> Optional[str]:
             "srlimit": 1
         }
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        headers = {
+            "User-Agent": "NawwaVisualizationApp/1.0 (https://nawwa.ai; contact@nawwa.ai) httpx/0.24"
+        }
+
+        async with httpx.AsyncClient(timeout=10.0, headers=headers) as client:
             search_response = await client.get(search_url, params=search_params)
             search_response.raise_for_status()
             search_data = search_response.json()
@@ -89,7 +93,11 @@ def fetch_wikipedia_image_sync(person_name: str) -> Optional[str]:
             "srlimit": 1
         }
 
-        with httpx.Client(timeout=10.0) as client:
+        headers = {
+            "User-Agent": "NawwaVisualizationApp/1.0 (https://nawwa.ai; contact@nawwa.ai) httpx/0.24"
+        }
+
+        with httpx.Client(timeout=10.0, headers=headers) as client:
             search_response = client.get(search_url, params=search_params)
             search_response.raise_for_status()
             search_data = search_response.json()
