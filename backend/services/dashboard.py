@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
-from services.db import get_db
+from .db import get_db
 from models.user import User
 from utils.auth_deps import get_admin_user
 
