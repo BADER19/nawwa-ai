@@ -321,6 +321,62 @@ PROMPT_TEMPLATE = (
     "     ]\n"
     "   }}\n\n"
 
+    "   HUMAN ANATOMY & MEDICAL DIAGRAMS (for medical students):\n"
+    "   USE FOR: human anatomy, organs, body parts, systems, medical diagrams\n"
+    "   KEYWORDS: 'skeleton', 'heart', 'brain', 'lungs', 'liver', 'digestive system', 'nervous system', 'anatomy', 'organ', 'muscle'\n"
+    "   CRITICAL RULES:\n"
+    "   - Use 'anatomy_term' field to fetch educational anatomy images from Wikipedia\n"
+    "   - DO NOT include 'src' field - backend will fetch the image automatically\n"
+    "   - Support both individual organs and complete systems\n"
+    "   - Format: Set 'anatomy_term' to the medical term for Wikipedia lookup\n"
+    "   EXAMPLE 1: 'show me the human skeleton'\n"
+    "   {{\n"
+    "     \"visualType\": \"conceptual\",\n"
+    "     \"elements\": [\n"
+    "       {{\n"
+    "         \"type\": \"image\",\n"
+    "         \"x\": 200,\n"
+    "         \"y\": 50,\n"
+    "         \"width\": 400,\n"
+    "         \"height\": 500,\n"
+    "         \"anatomy_term\": \"Human skeleton\"\n"
+    "       }}\n"
+    "     ]\n"
+    "   }}\n"
+    "   EXAMPLE 2: 'show me the human heart'\n"
+    "   {{\n"
+    "     \"visualType\": \"conceptual\",\n"
+    "     \"elements\": [\n"
+    "       {{\n"
+    "         \"type\": \"image\",\n"
+    "         \"x\": 200,\n"
+    "         \"y\": 50,\n"
+    "         \"width\": 400,\n"
+    "         \"height\": 450,\n"
+    "         \"anatomy_term\": \"Human heart\"\n"
+    "       }}\n"
+    "     ]\n"
+    "   }}\n"
+    "   EXAMPLE 3: 'show me the digestive system'\n"
+    "   {{\n"
+    "     \"visualType\": \"conceptual\",\n"
+    "     \"elements\": [\n"
+    "       {{\n"
+    "         \"type\": \"image\",\n"
+    "         \"x\": 200,\n"
+    "         \"y\": 50,\n"
+    "         \"width\": 400,\n"
+    "         \"height\": 500,\n"
+    "         \"anatomy_term\": \"Human digestive system\"\n"
+    "       }}\n"
+    "     ]\n"
+    "   }}\n"
+    "   SUPPORTED ANATOMY TERMS:\n"
+    "   - Skeletal: 'Human skeleton', 'Skull', 'Spine', 'Ribcage'\n"
+    "   - Organs: 'Human heart', 'Human brain', 'Lungs', 'Liver', 'Kidney', 'Stomach'\n"
+    "   - Systems: 'Circulatory system', 'Nervous system', 'Digestive system', 'Respiratory system', 'Muscular system'\n"
+    "   - Specific: 'Eye anatomy', 'Ear anatomy', 'Tooth anatomy'\n\n"
+
     "9. EQUATION DISPLAY (for showing formulas without graphs):\n"
     "   USE FOR: showing mathematical equations, formulas, definitions when user doesn't ask to 'plot' or 'graph'\n"
     "   KEYWORDS: 'show equation', 'show formula', 'what is the equation', 'formula for', 'equation for'\n"
@@ -999,6 +1055,17 @@ def normalize_spec(spec: Dict[str, Any]) -> Dict[str, Any]:
                 logging.getLogger("llm").info(f"Found Wikipedia image: {src}")
             else:
                 logging.getLogger("llm").warning(f"No Wikipedia image found for: {celebrity_name}")
+
+        # Handle anatomy images - fetch from Wikipedia if anatomy_term is provided
+        if t == "image" and not src and e.get("anatomy_term"):
+            anatomy_term = e.get("anatomy_term")
+            logging.getLogger("llm").info(f"Fetching Wikipedia anatomy image for: {anatomy_term}")
+            wikipedia_url = fetch_wikipedia_image_sync(anatomy_term)
+            if wikipedia_url:
+                src = wikipedia_url
+                logging.getLogger("llm").info(f"Found Wikipedia anatomy image: {src}")
+            else:
+                logging.getLogger("llm").warning(f"No Wikipedia anatomy image found for: {anatomy_term}")
 
         # Extract text-specific properties
         fontSize = e.get("fontSize")
