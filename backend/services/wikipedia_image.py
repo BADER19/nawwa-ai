@@ -135,9 +135,62 @@ def fetch_wikipedia_image_sync(person_name: str) -> Optional[str]:
                 image_url = page["original"]["source"]
                 logger.info(f"Found Wikipedia image: {image_url}")
                 return image_url
-            else:
-                logger.warning(f"No image found on Wikipedia page: {page_title}")
-                return None
+
+            # Fallback: Try to get images from the page content
+            logger.info(f"No featured image, trying to fetch images from page content...")
+            images_params = {
+                "action": "query",
+                "format": "json",
+                "titles": page_title,
+                "prop": "images",
+                "imlimit": 10
+            }
+
+            images_response = client.get(search_url, params=images_params)
+            images_response.raise_for_status()
+            images_data = images_response.json()
+
+            pages_with_images = images_data.get("query", {}).get("pages", {})
+            if pages_with_images:
+                page_with_images = next(iter(pages_with_images.values()))
+                images_list = page_with_images.get("images", [])
+
+                # Filter for actual image files (not icons/logos)
+                for img in images_list:
+                    img_title = img.get("title", "")
+                    # Skip common non-content images
+                    if any(skip in img_title.lower() for skip in ["commons-logo", "icon", "logo.svg", "book-new", "shackle"]):
+                        continue
+
+                    # This looks like a real image, get its URL
+                    logger.info(f"Found image file: {img_title}")
+
+                    # Get the actual image URL
+                    imageinfo_params = {
+                        "action": "query",
+                        "format": "json",
+                        "titles": img_title,
+                        "prop": "imageinfo",
+                        "iiprop": "url",
+                        "iiurlwidth": 800
+                    }
+
+                    imageinfo_response = client.get(search_url, params=imageinfo_params)
+                    imageinfo_response.raise_for_status()
+                    imageinfo_data = imageinfo_response.json()
+
+                    imageinfo_pages = imageinfo_data.get("query", {}).get("pages", {})
+                    if imageinfo_pages:
+                        imageinfo_page = next(iter(imageinfo_pages.values()))
+                        imageinfo = imageinfo_page.get("imageinfo", [])
+                        if imageinfo and len(imageinfo) > 0:
+                            image_url = imageinfo[0].get("url") or imageinfo[0].get("thumburl")
+                            if image_url:
+                                logger.info(f"Found Wikipedia content image: {image_url}")
+                                return image_url
+
+            logger.warning(f"No image found on Wikipedia page: {page_title}")
+            return None
 
     except Exception as e:
         logger.error(f"Error fetching Wikipedia image for {person_name}: {str(e)}")
