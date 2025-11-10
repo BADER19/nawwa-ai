@@ -9,7 +9,10 @@ logger = logging.getLogger("image_proxy")
 async def fetch_external_image(url: str) -> Response:
     """Fetch an external image and return it as a response to avoid CORS issues."""
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        headers = {
+            "User-Agent": "NawwaVisualizationApp/1.0 (https://nawwa.ai; contact@nawwa.ai) httpx/0.24"
+        }
+        async with httpx.AsyncClient(timeout=10.0, headers=headers) as client:
             response = await client.get(url, follow_redirects=True)
             response.raise_for_status()
 
