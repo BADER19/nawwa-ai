@@ -135,6 +135,20 @@ def create_app() -> FastAPI:
             }
         }
 
+    @app.get("/debug/env")
+    def debug_env():
+        """Debug endpoint to check environment variables (remove in production)"""
+        import os
+        return {
+            "has_openai_key": bool(os.getenv("OPENAI_API_KEY")),
+            "key_length": len(os.getenv("OPENAI_API_KEY", "")) if os.getenv("OPENAI_API_KEY") else 0,
+            "key_prefix": os.getenv("OPENAI_API_KEY", "")[:10] + "..." if os.getenv("OPENAI_API_KEY") else None,
+            "all_env_keys": sorted([k for k in os.environ.keys() if not k.startswith("_")]),
+            "cors_origins": os.getenv("CORS_ORIGINS"),
+            "database_url_exists": bool(os.getenv("DATABASE_URL")),
+            "redis_url_exists": bool(os.getenv("REDIS_URL")),
+        }
+
     app.include_router(auth_service.router, prefix="/auth", tags=["auth"])
     app.include_router(visualize_service.router, prefix="/visualize", tags=["visualize"])
     app.include_router(voice_service.router, prefix="/visualize", tags=["voice"])
