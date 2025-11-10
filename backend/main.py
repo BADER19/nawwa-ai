@@ -3,6 +3,7 @@ import time
 from sqlalchemy import text
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -134,6 +135,16 @@ def create_app() -> FastAPI:
                 for tier, config in TIER_MODELS.items()
             }
         }
+
+    @app.get("/admin/dashboard", response_class=HTMLResponse)
+    def admin_dashboard():
+        """Simple admin dashboard HTML page"""
+        template_path = os.path.join(os.path.dirname(__file__), "templates", "admin_dashboard.html")
+        try:
+            with open(template_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except FileNotFoundError:
+            return "<h1>Dashboard template not found</h1>"
 
     @app.get("/debug/env")
     def debug_env():
