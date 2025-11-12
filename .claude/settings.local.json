@@ -42,7 +42,14 @@
       "Bash(git add:*)",
       "Bash(.env.production)",
       "Bash(vercel:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git rm:*)",
+      "Bash(cat:*)",
+      "Bash(railway login:*)",
+      "Bash(railway run:*)",
+      "Bash(git revert:*)",
+      "Bash(git pull:*)",
+      "Bash(railway logs:*)"
     ],
     "deny": [],
     "ask": []

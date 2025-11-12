@@ -2,7 +2,7 @@
 Admin service for comprehensive system management.
 Provides full CRUD operations for users, workspaces, projects, and chat history.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import Optional, List
@@ -14,7 +14,9 @@ from models.user import User, SubscriptionTier
 from models.workspace import Workspace
 from models.project import Project
 from models.chat_message import ChatMessage
+from models.audit_log import AuditLog
 from utils.auth_deps import get_admin_user
+from services.audit_service import log_admin_action, get_admin_audit_logs
 
 
 router = APIRouter()
@@ -219,6 +221,7 @@ async def get_user(
 async def update_user(
     user_id: int,
     update_data: UpdateUserRequest,
+    request: Request,
     admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -237,28 +240,54 @@ async def update_user(
             detail="Cannot remove admin status from yourself. Ask another admin."
         )
 
-    # Apply updates
-    if update_data.email is not None:
+    # Track changes for audit log
+    changes = {}
+    old_values = {}
+
+    # Apply updates and track changes
+    if update_data.email is not None and update_data.email != user.email:
         # Check email uniqueness
         existing = db.query(User).filter(User.email == update_data.email, User.id != user_id).first()
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use")
+        old_values["email"] = user.email
         user.email = update_data.email
+        changes["email"] = {"old": old_values["email"], "new": user.email}
 
-    if update_data.username is not None:
+    if update_data.username is not None and update_data.username != user.username:
+        old_values["username"] = user.username
         user.username = update_data.username
+        changes["username"] = {"old": old_values["username"], "new": user.username}
 
-    if update_data.subscription_tier is not None:
+    if update_data.subscription_tier is not None and update_data.subscription_tier != user.subscription_tier:
+        old_values["subscription_tier"] = user.subscription_tier.value
         user.subscription_tier = update_data.subscription_tier
+        changes["subscription_tier"] = {"old": old_values["subscription_tier"], "new": user.subscription_tier.value}
 
-    if update_data.is_admin is not None:
+    if update_data.is_admin is not None and update_data.is_admin != user.is_admin:
+        old_values["is_admin"] = user.is_admin
         user.is_admin = update_data.is_admin
+        changes["is_admin"] = {"old": old_values["is_admin"], "new": user.is_admin}
 
-    if update_data.usage_count is not None:
+    if update_data.usage_count is not None and update_data.usage_count != user.usage_count:
+        old_values["usage_count"] = user.usage_count
         user.usage_count = update_data.usage_count
+        changes["usage_count"] = {"old": old_values["usage_count"], "new": user.usage_count}
 
     db.commit()
     db.refresh(user)
+
+    # Log the admin action
+    if changes:
+        log_admin_action(
+            db=db,
+            admin=admin,
+            action="user.update",
+            target_user=user,
+            request=request,
+            changes=changes,
+            notes=f"Updated user {user.email}"
+        )
 
     return {
         "ok": True,
@@ -276,6 +305,7 @@ async def update_user(
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: int,
+    request: Request,
     admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -291,6 +321,24 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
 
     email = user.email
+    user_data = {
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "subscription_tier": user.subscription_tier.value
+    }
+
+    # Log before deletion
+    log_admin_action(
+        db=db,
+        admin=admin,
+        action="user.delete",
+        target_user=user,
+        request=request,
+        changes={"deleted_user": user_data},
+        notes=f"Deleted user {email} and all associated data"
+    )
+
     db.delete(user)
     db.commit()
 
@@ -300,6 +348,7 @@ async def delete_user(
 @router.post("/users/{user_id}/reset-quota")
 async def reset_user_quota(
     user_id: int,
+    request: Request,
     admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -308,9 +357,21 @@ async def reset_user_quota(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    old_count = user.usage_count
     user.usage_count = 0
     user.usage_reset_date = datetime.utcnow() + timedelta(days=1)
     db.commit()
+
+    # Log the action
+    log_admin_action(
+        db=db,
+        admin=admin,
+        action="user.reset_quota",
+        target_user=user,
+        request=request,
+        changes={"usage_count": {"old": old_count, "new": 0}},
+        notes=f"Reset quota for {user.email}"
+    )
 
     return {"ok": True, "message": f"Quota reset for {user.email}"}
 
@@ -559,3 +620,112 @@ async def get_system_stats(
         new_users_last_30_days=new_users_last_30_days,
         active_users_last_7_days=active_users_last_7_days
     )
+
+
+# ==================== AUDIT LOGS ====================
+
+class AuditLogResponse(BaseModel):
+    id: int
+    user_email: str
+    user_role: str
+    action: str
+    resource_type: str
+    resource_id: Optional[str]
+    method: str
+    endpoint: str
+    ip_address: Optional[str]
+    changes: Optional[dict]
+    status_code: int
+    error_message: Optional[str]
+    notes: Optional[str]
+    created_at: datetime
+
+
+@router.get("/audit-logs", response_model=List[AuditLogResponse])
+async def get_audit_logs(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    action_filter: Optional[str] = None,
+    user_id: Optional[int] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get audit logs with optional filters.
+    Returns logs of all admin and sensitive actions.
+    """
+    query = db.query(AuditLog)
+
+    # Filter by user
+    if user_id:
+        query = query.filter(AuditLog.user_id == user_id)
+
+    # Filter by action
+    if action_filter:
+        query = query.filter(AuditLog.action.like(f"%{action_filter}%"))
+
+    # Filter by date range
+    if start_date:
+        query = query.filter(AuditLog.created_at >= start_date)
+
+    if end_date:
+        query = query.filter(AuditLog.created_at <= end_date)
+
+    # Order and paginate
+    logs = query.order_by(desc(AuditLog.created_at)).offset(skip).limit(limit).all()
+
+    return [
+        AuditLogResponse(
+            id=log.id,
+            user_email=log.user_email,
+            user_role=log.user_role,
+            action=log.action,
+            resource_type=log.resource_type,
+            resource_id=log.resource_id,
+            method=log.method,
+            endpoint=log.endpoint,
+            ip_address=log.ip_address,
+            changes=log.changes,
+            status_code=log.status_code,
+            error_message=log.error_message,
+            notes=log.notes,
+            created_at=log.created_at
+        )
+        for log in logs
+    ]
+
+
+@router.get("/audit-logs/user/{user_id}", response_model=List[AuditLogResponse])
+async def get_user_audit_logs_endpoint(
+    user_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get all audit logs for a specific user"""
+    from services.audit_service import get_user_audit_logs
+
+    logs = get_user_audit_logs(db, user_id, limit, skip)
+
+    return [
+        AuditLogResponse(
+            id=log.id,
+            user_email=log.user_email,
+            user_role=log.user_role,
+            action=log.action,
+            resource_type=log.resource_type,
+            resource_id=log.resource_id,
+            method=log.method,
+            endpoint=log.endpoint,
+            ip_address=log.ip_address,
+            changes=log.changes,
+            status_code=log.status_code,
+            error_message=log.error_message,
+            notes=log.notes,
+            created_at=log.created_at
+        )
+        for log in logs
+    ]

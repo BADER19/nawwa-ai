@@ -39,6 +39,20 @@ class User(Base):
     # Trial tracking
     trial_ends_at = Column(DateTime, nullable=True)
 
+    # Email verification
+    email_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String(255), nullable=True, unique=True, index=True)
+    verification_sent_at = Column(DateTime, nullable=True)
+
+    # Password reset
+    reset_token = Column(String(255), nullable=True, unique=True, index=True)
+    reset_token_expires = Column(DateTime, nullable=True)
+
+    # 2FA
+    totp_secret = Column(String(255), nullable=True)
+    two_factor_enabled = Column(Boolean, default=False, nullable=False)
+    backup_codes = Column(String(1000), nullable=True)  # JSON array of backup codes
+
     workspaces = relationship("Workspace", back_populates="owner", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
 

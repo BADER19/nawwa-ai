@@ -34,6 +34,7 @@ from services import paypal_webhook as paypal_webhook_service
 from services import chat as chat_service
 from services import voice as voice_service
 from services import admin as admin_service
+from services import gdpr as gdpr_service
 from engines.math_interactive import api as math_interactive_service
 from services.llm_service import llm_ready, MODEL as LLM_MODEL
 from services.image_service import can_generate_images, IMAGE_MODEL as IMG_MODEL
@@ -172,6 +173,7 @@ def create_app() -> FastAPI:
     app.include_router(paypal_webhook_service.router, tags=["paypal"])
     app.include_router(chat_service.router, prefix="/chat", tags=["chat"])
     app.include_router(admin_service.router, prefix="/admin", tags=["admin"])
+    app.include_router(gdpr_service.router, prefix="/gdpr", tags=["gdpr"])
     return app
 
 
