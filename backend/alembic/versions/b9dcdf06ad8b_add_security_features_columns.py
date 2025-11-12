@@ -19,6 +19,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Import for checking table existence
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+
     # Email verification columns
     op.add_column('users', sa.Column('email_verified', sa.Boolean(), nullable=False, server_default='false'))
     op.add_column('users', sa.Column('verification_token', sa.String(length=255), nullable=True))
@@ -37,35 +42,36 @@ def upgrade() -> None:
     op.create_index('ix_users_verification_token', 'users', ['verification_token'], unique=True)
     op.create_index('ix_users_reset_token', 'users', ['reset_token'], unique=True)
 
-    # Create audit_logs table
-    op.create_table(
-        'audit_logs',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('user_email', sa.String(length=255), nullable=False),
-        sa.Column('user_role', sa.String(length=50), nullable=False),
-        sa.Column('action', sa.String(length=100), nullable=False),
-        sa.Column('resource_type', sa.String(length=50), nullable=False),
-        sa.Column('resource_id', sa.String(length=100), nullable=True),
-        sa.Column('method', sa.String(length=10), nullable=False),
-        sa.Column('endpoint', sa.String(length=255), nullable=False),
-        sa.Column('ip_address', sa.String(length=45), nullable=True),
-        sa.Column('user_agent', sa.Text(), nullable=True),
-        sa.Column('old_values', sa.JSON(), nullable=True),
-        sa.Column('new_values', sa.JSON(), nullable=True),
-        sa.Column('changes', sa.JSON(), nullable=True),
-        sa.Column('status_code', sa.Integer(), nullable=False),
-        sa.Column('error_message', sa.Text(), nullable=True),
-        sa.Column('notes', sa.Text(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE')
-    )
+    # Create audit_logs table only if it doesn't exist
+    if 'audit_logs' not in inspector.get_table_names():
+        op.create_table(
+            'audit_logs',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('user_id', sa.Integer(), nullable=False),
+            sa.Column('user_email', sa.String(length=255), nullable=False),
+            sa.Column('user_role', sa.String(length=50), nullable=False),
+            sa.Column('action', sa.String(length=100), nullable=False),
+            sa.Column('resource_type', sa.String(length=50), nullable=False),
+            sa.Column('resource_id', sa.String(length=100), nullable=True),
+            sa.Column('method', sa.String(length=10), nullable=False),
+            sa.Column('endpoint', sa.String(length=255), nullable=False),
+            sa.Column('ip_address', sa.String(length=45), nullable=True),
+            sa.Column('user_agent', sa.Text(), nullable=True),
+            sa.Column('old_values', sa.JSON(), nullable=True),
+            sa.Column('new_values', sa.JSON(), nullable=True),
+            sa.Column('changes', sa.JSON(), nullable=True),
+            sa.Column('status_code', sa.Integer(), nullable=False),
+            sa.Column('error_message', sa.Text(), nullable=True),
+            sa.Column('notes', sa.Text(), nullable=True),
+            sa.Column('created_at', sa.DateTime(), nullable=False),
+            sa.PrimaryKeyConstraint('id'),
+            sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE')
+        )
 
-    # Create indexes on audit_logs
-    op.create_index('ix_audit_logs_user_id', 'audit_logs', ['user_id'])
-    op.create_index('ix_audit_logs_action', 'audit_logs', ['action'])
-    op.create_index('ix_audit_logs_created_at', 'audit_logs', ['created_at'])
+        # Create indexes on audit_logs
+        op.create_index('ix_audit_logs_user_id', 'audit_logs', ['user_id'])
+        op.create_index('ix_audit_logs_action', 'audit_logs', ['action'])
+        op.create_index('ix_audit_logs_created_at', 'audit_logs', ['created_at'])
 
 
 def downgrade() -> None:
