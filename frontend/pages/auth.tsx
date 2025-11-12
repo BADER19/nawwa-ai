@@ -12,6 +12,15 @@ export default function AuthPage() {
   const [error, setError] = useState<string>('');
   const router = useRouter();
 
+  // Clear token when switching to signup mode to prevent data leakage
+  const switchToSignup = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
+    setIsLogin(false);
+    setError('');
+  };
+
   // Safe error setter that ensures only strings are set
   const setErrorSafe = (errorValue: any) => {
     if (typeof errorValue === 'string') {
@@ -59,6 +68,11 @@ export default function AuthPage() {
         }
         router.push('/app');
       } else {
+        // CRITICAL FIX: Clear old token before signup to prevent data leakage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+        }
+
         await apiPost('/auth/signup', { email, password, username });
         setError('');
         setIsLogin(true);
@@ -497,6 +511,11 @@ export default function AuthPage() {
               {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
               <button
                 onClick={() => {
+                  const switchingToSignup = isLogin; // Currently on login, switching to signup
+                  if (switchingToSignup && typeof window !== 'undefined') {
+                    // CRITICAL: Clear token when switching to signup to prevent data leakage
+                    localStorage.removeItem('token');
+                  }
                   setIsLogin(!isLogin);
                   setError('');
                   setUsername('');
