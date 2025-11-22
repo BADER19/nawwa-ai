@@ -28,12 +28,22 @@ PROMPT_TEMPLATE = (
     "1. NEVER return plain text explanations or descriptions\n"
     "2. NEVER return markdown or prose\n"
     "3. ALWAYS return a valid JSON visual specification\n"
-    "4. ❌ BANNED: Boring box-and-arrow diagrams with type='rect' and type='arrow'\n"
-    "5. ❌ BANNED: Simple element-based flowcharts using rectangles\n"
-    "6. ✅ REQUIRED: Use rich Plotly charts (Sankey, Sunburst, Treemap, etc.) whenever possible\n"
+    "4. ❌ BANNED: Generic polylines/snakey diagrams when a specific conceptual pattern exists\n"
+    "5. ❌ BANNED: Simple element-based flowcharts when rich visualizations are better\n"
+    "6. ✅ REQUIRED: Match conceptual patterns FIRST, then Plotly charts, then basic shapes\n"
     "7. Every response MUST be a renderable visual - no exceptions\n\n"
 
-    "🎯 SMART ROUTING - Choose the RIGHT visualization type:\n\n"
+    "🎯 SMART ROUTING PRIORITY (CHECK IN THIS ORDER!):\n\n"
+
+    "STEP 1️⃣: CHECK FOR CONCEPTUAL PATTERNS FIRST!\n"
+    "If the request matches any conceptual pattern (cycle, hierarchy, balance, network, flow, venn, growth, target, transformation, modular, radial, matrix), USE THAT SPECIFIC PATTERN.\n"
+    "DO NOT default to generic shapes or polylines if a conceptual pattern matches!\n\n"
+
+    "STEP 2️⃣: CHECK FOR DATA VISUALIZATIONS\n"
+    "If it's data-driven (comparisons, trends, statistics), use appropriate Plotly charts.\n\n"
+
+    "STEP 3️⃣: ONLY USE BASIC SHAPES AS LAST RESORT\n"
+    "Generic shapes should only be used when no conceptual pattern or data viz applies.\n\n"
 
     "📊 DATA COMPARISONS → Bar/Pie Charts (visualType: 'plotly')\n"
     "   Keywords: compare, vs, versus, which is better, A vs B, market share, breakdown\n"
@@ -562,8 +572,9 @@ PROMPT_TEMPLATE = (
     "   KEYWORDS: correlogram, correlation matrix\n"
     "   EXAMPLE: Use heatmap with correlation coefficients (-1 to 1) and diverging colorscale\n\n"
 
-    "22. ENHANCED CONCEPTUAL DIAGRAMS - Match shapes to concepts!\n"
-    "   visualType: 'conceptual' with semantic shape matching\n\n"
+    "🌟 CONCEPTUAL PATTERNS - PRIORITY #1 - Match shapes to meaning!\n"
+    "   visualType: 'conceptual' with SEMANTIC SHAPE MATCHING\n"
+    "   ⚠️ IMPORTANT: Check these patterns FIRST before using generic shapes!\n\n"
 
     "   🔄 CIRCULAR/CYCLICAL CONCEPTS → Use circles, rings, arcs\n"
     "   Keywords: cycle, loop, continuous, eternal, recurring, circular\n"
@@ -715,6 +726,19 @@ PROMPT_TEMPLATE = (
     "       {type: 'text', x: 100, y: 300, label: 'Urgency ↓'}\n"
     "     ]\n"
     "   }\n\n"
+
+    "⛔ WHEN NOT TO USE POLYLINES/SNAKEY DIAGRAMS:\n"
+    "   - NEVER for cycles → Use circles/rings instead\n"
+    "   - NEVER for hierarchies → Use triangles/pyramids/trees instead\n"
+    "   - NEVER for balance/comparison → Use split shapes or side-by-side instead\n"
+    "   - NEVER for networks → Use nodes with straight connections instead\n"
+    "   - NEVER for growth → Use progressively larger shapes instead\n"
+    "   - NEVER for grids/matrices → Use rectangles in grid layout instead\n\n"
+
+    "✅ WHEN TO USE POLYLINES:\n"
+    "   - ONLY for actual wavy/curved patterns (waves, rivers, snakes)\n"
+    "   - ONLY for freeform artistic drawings\n"
+    "   - ONLY when no conceptual pattern matches\n\n"
 
     "23. VECTORS & MATHEMATICAL OBJECTS:\n"
     "   USE FOR: vectors, vector spaces, mathematical objects, abstract algebra\n"
